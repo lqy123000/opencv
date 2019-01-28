@@ -136,7 +136,7 @@ medianBlur_8u_O1( const Mat& _src, Mat& _dst, int ksize )
         for( c = 0; c < cn; c++ )
         {
             for( j = 0; j < n; j++ )
-                COP( c, j, src[cn*j+c], += (cv::HT)(r+2) );
+                COP( c, j, src[cn*j+c], += (HT)(r+2) );
 
             for( i = 1; i < r; i++ )
             {
@@ -245,7 +245,7 @@ medianBlur_8u_O1( const Mat& _src, Mat& _dst, int ksize )
                         memset(&H[c].fine[k], 0, 16 * sizeof(HT));
 #endif
                         px = h_fine + 16 * (n*(16 * c + k) + j - r);
-                        for (luc[c][k] = cv::HT(j - r); luc[c][k] < MIN(j + r + 1, n); ++luc[c][k], px += 16)
+                        for (luc[c][k] = HT(j - r); luc[c][k] < MIN(j + r + 1, n); ++luc[c][k], px += 16)
                         {
 #if CV_SIMD256
                             v_fine += v256_load(px);

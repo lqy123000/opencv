@@ -406,7 +406,7 @@ struct datastream {
 	uint8_t         data[QUIRC_MAX_PAYLOAD];
 };
 
-static inline int grid_bit(const struct quirc_code *code, int x, int y)
+static int grid_bit(const struct quirc_code *code, int x, int y)
 {
 	int p = y * code->size + x;
 
@@ -612,7 +612,7 @@ static quirc_decode_error_t codestream_ecc(struct quirc_data *data,
 	return QUIRC_SUCCESS;
 }
 
-static inline int bits_remaining(const struct datastream *ds)
+static int bits_remaining(const struct datastream *ds)
 {
 	return ds->data_bits - ds->ptr;
 }

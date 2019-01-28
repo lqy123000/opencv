@@ -51,6 +51,12 @@ int quirc_resize(struct quirc *q, int w, int h)
 	quirc_pixel_t	*pixels = NULL;
 	int		*row_average = NULL;
 
+	/* compute the "old" (i.e. currently allocated) and the "new"
+	(i.e. requested) image dimensions */
+	size_t olddim = (q->w) * (q->h);
+	size_t newdim = w * h;
+	size_t min = (olddim < newdim ? olddim : newdim);
+
 	/*
 	 * XXX: w and h should be size_t (or at least unsigned) as negatives
 	 * values would not make much sense. The downside is that it would break
@@ -67,12 +73,6 @@ int quirc_resize(struct quirc *q, int w, int h)
 	image = calloc(w, h);
 	if (!image)
 		goto fail;
-
-	/* compute the "old" (i.e. currently allocated) and the "new"
-	   (i.e. requested) image dimensions */
-	size_t olddim = q->w * q->h;
-	size_t newdim = w * h;
-	size_t min = (olddim < newdim ? olddim : newdim);
 
 	/*
 	 * copy the data into the new buffer, avoiding (a) to read beyond the
