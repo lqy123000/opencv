@@ -622,7 +622,7 @@ public:
     implementation if multiple are available: e.g. cv::CAP_FFMPEG or cv::CAP_IMAGES or cv::CAP_DSHOW.
     @sa The list of supported API backends cv::VideoCaptureAPIs
     */
-    CV_WRAP VideoCapture(const String& filename, int apiPreference = CAP_ANY);
+    CV_WRAP VideoCapture(const String& filename, int apiPreference = CAP_ANY, int thread_num = -1, bool key_frame = false);
 
     /** @overload
     @brief  Opens a camera for video capturing
@@ -651,7 +651,7 @@ public:
 
     The method first calls VideoCapture::release to close the already opened file or camera.
      */
-    CV_WRAP virtual bool open(const String& filename, int apiPreference = CAP_ANY);
+    CV_WRAP virtual bool open(const String& filename, int apiPreference = CAP_ANY, int thread_num = -1, bool key_frame = false);
 
     /** @brief  Opens a camera for video capturing
 

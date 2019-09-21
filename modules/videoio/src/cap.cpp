@@ -53,10 +53,10 @@ void DefaultDeleter<CvVideoWriter>::operator ()(CvVideoWriter* obj) const { cvRe
 VideoCapture::VideoCapture()
 {}
 
-VideoCapture::VideoCapture(const String& filename, int apiPreference)
+VideoCapture::VideoCapture(const String& filename, int apiPreference, int thread_num, bool key_frame)
 {
     CV_TRACE_FUNCTION();
-    open(filename, apiPreference);
+    open(filename, apiPreference, thread_num, key_frame);
 }
 
 VideoCapture::VideoCapture(int index, int apiPreference)
@@ -73,7 +73,7 @@ VideoCapture::~VideoCapture()
     cap.release();
 }
 
-bool VideoCapture::open(const String& filename, int apiPreference)
+bool VideoCapture::open(const String& filename, int apiPreference, int thread_num, bool key_frame)
 {
     CV_TRACE_FUNCTION();
 
@@ -86,7 +86,7 @@ bool VideoCapture::open(const String& filename, int apiPreference)
         if (apiPreference == CAP_ANY || apiPreference == info.id)
         {
             CvCapture* capture = NULL;
-            VideoCapture_create(capture, icap, info.id, filename);
+            VideoCapture_create(capture, icap, info.id, filename, thread_num, key_frame);
             if (!icap.empty())
             {
                 if (icap->isOpened())

@@ -31,7 +31,7 @@ enum
 typedef struct CvCapture_FFMPEG CvCapture_FFMPEG;
 typedef struct CvVideoWriter_FFMPEG CvVideoWriter_FFMPEG;
 
-OPENCV_FFMPEG_API struct CvCapture_FFMPEG* cvCreateFileCapture_FFMPEG(const char* filename);
+OPENCV_FFMPEG_API struct CvCapture_FFMPEG* cvCreateFileCapture_FFMPEG(const char* filename, int thread_num = -1, bool key_frame = false);
 OPENCV_FFMPEG_API int cvSetCaptureProperty_FFMPEG(struct CvCapture_FFMPEG* cap,
                                                   int prop, double value);
 OPENCV_FFMPEG_API double cvGetCaptureProperty_FFMPEG(struct CvCapture_FFMPEG* cap, int prop);

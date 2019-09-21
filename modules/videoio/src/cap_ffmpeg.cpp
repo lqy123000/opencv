@@ -44,7 +44,7 @@
 #if defined(HAVE_FFMPEG)
 
 #include <string>
-
+#undef HAVE_FFMPEG_WRAPPER
 #if !defined(HAVE_FFMPEG_WRAPPER)
 #include "cap_ffmpeg_impl.hpp"
 
@@ -212,7 +212,11 @@ class CvCapture_FFMPEG_proxy CV_FINAL : public cv::IVideoCapture
 {
 public:
     CvCapture_FFMPEG_proxy() { ffmpegCapture = 0; }
-    CvCapture_FFMPEG_proxy(const cv::String& filename) { ffmpegCapture = 0; open(filename); }
+    CvCapture_FFMPEG_proxy(const cv::String& filename, int thread_num = -1, bool key_frame = false)
+    {
+        ffmpegCapture = 0;
+        open(filename, thread_num, key_frame);
+    }
     virtual ~CvCapture_FFMPEG_proxy() { close(); }
 
     virtual double getProperty(int propId) const CV_OVERRIDE
@@ -238,11 +242,11 @@ public:
         cv::Mat(height, width, CV_MAKETYPE(CV_8U, cn), data, step).copyTo(frame);
         return true;
     }
-    virtual bool open( const cv::String& filename )
+    virtual bool open( const cv::String& filename, int thread_num = -1, bool key_frame = false)
     {
         close();
 
-        ffmpegCapture = icvCreateFileCapture_FFMPEG_p( filename.c_str() );
+        ffmpegCapture = icvCreateFileCapture_FFMPEG_p( filename.c_str(), thread_num, key_frame);
         return ffmpegCapture != 0;
     }
     virtual void close()
@@ -266,14 +270,14 @@ protected:
 
 } // namespace
 
-cv::Ptr<cv::IVideoCapture> cvCreateFileCapture_FFMPEG_proxy(const cv::String& filename)
+cv::Ptr<cv::IVideoCapture> cvCreateFileCapture_FFMPEG_proxy(const cv::String& filename, int thread_num, bool key_frame)
 {
 #if defined(HAVE_FFMPEG_WRAPPER)
     icvInitFFMPEG::Init();
     if (!icvCreateFileCapture_FFMPEG_p)
         return cv::Ptr<cv::IVideoCapture>();
 #endif
-    cv::Ptr<CvCapture_FFMPEG_proxy> capture = cv::makePtr<CvCapture_FFMPEG_proxy>(filename);
+    cv::Ptr<CvCapture_FFMPEG_proxy> capture = cv::makePtr<CvCapture_FFMPEG_proxy>(filename, thread_num, key_frame);
     if (capture && capture->isOpened())
         return capture;
     return cv::Ptr<cv::IVideoCapture>();

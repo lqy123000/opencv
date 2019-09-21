@@ -490,7 +490,7 @@ void VideoCapture_create(CvCapture*& capture, Ptr<IVideoCapture>& icap, VideoCap
     } // switch (api)
 }
 
-void VideoCapture_create(CvCapture*& capture, Ptr<IVideoCapture>& icap, VideoCaptureAPIs api, const cv::String& filename)
+void VideoCapture_create(CvCapture*& capture, Ptr<IVideoCapture>& icap, VideoCaptureAPIs api, const cv::String& filename, int thread_num, bool key_frame)
 {
     CV_UNUSED(capture);
     switch (api)
@@ -531,7 +531,7 @@ void VideoCapture_create(CvCapture*& capture, Ptr<IVideoCapture>& icap, VideoCap
         break;
 #ifdef HAVE_FFMPEG
     case CAP_FFMPEG:
-        TRY_OPEN(cvCreateFileCapture_FFMPEG_proxy(filename))
+        TRY_OPEN(cvCreateFileCapture_FFMPEG_proxy(filename, thread_num, key_frame))
         break;
 #endif
 #ifdef HAVE_GSTREAMER

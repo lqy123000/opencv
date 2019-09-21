@@ -475,7 +475,7 @@ static AVRational _opencv_ffmpeg_get_sample_aspect_ratio(AVStream *stream)
 
 struct CvCapture_FFMPEG
 {
-    bool open( const char* filename );
+    bool open(const char* filename, int thread_num = -1, bool key_frame = false);
     void close();
 
     double getProperty(int) const;
@@ -521,6 +521,7 @@ struct CvCapture_FFMPEG
    and so the filename is needed to reopen the file on backward seeking.
 */
     char              * filename;
+    bool keyframe;
 
 #if LIBAVFORMAT_BUILD >= CALC_FFMPEG_VERSION(52, 111, 0)
     AVDictionary *dict;
@@ -855,11 +856,12 @@ public:
 
 static InternalFFMpegRegister _init;
 
-bool CvCapture_FFMPEG::open( const char* _filename )
+bool CvCapture_FFMPEG::open(const char* _filename, int thread_num, bool key_frame)
 {
     AutoLock lock(_mutex);
     unsigned i;
     bool valid = false;
+    this->keyframe = key_frame;
 
     close();
 
@@ -924,7 +926,10 @@ bool CvCapture_FFMPEG::open( const char* _filename )
 //#ifdef FF_API_THREAD_INIT
 //        avcodec_thread_init(enc, get_number_of_cpus());
 //#else
-        enc->thread_count = get_number_of_cpus();
+        if (thread_num > 0)
+            enc->thread_count = thread_num;
+        else
+            enc->thread_count = get_number_of_cpus();
 //#endif
 
 #if LIBAVFORMAT_BUILD < CALC_FFMPEG_VERSION(53, 2, 0)
@@ -1027,16 +1032,28 @@ bool CvCapture_FFMPEG::grabFrame()
 #endif
 
         int ret = av_read_frame(ic, &packet);
-        if (ret == AVERROR(EAGAIN)) continue;
+        if (ret == AVERROR(EAGAIN))
+            continue;
+        else if (packet.size <= 0)
+        {
+            break;
+        }
 
         /* else if (ret < 0) break; */
 
         if( packet.stream_index != video_stream )
         {
             _opencv_ffmpeg_av_packet_unref (&packet);
-            count_errs++;
-            if (count_errs > max_number_of_attempts)
-                break;
+            //count_errs++;
+            //if (count_errs > max_number_of_attempts)
+            //    break;
+            continue;
+        }
+
+        bool is_keyframe = packet.flags & AV_PKT_FLAG_KEY;
+        if (this->keyframe && !is_keyframe && first_frame_number >= 0)
+        {
+            frame_number++;
             continue;
         }
 
@@ -1061,7 +1078,15 @@ bool CvCapture_FFMPEG::grabFrame()
                 picture_pts = picture->pkt_pts != AV_NOPTS_VALUE_ && picture->pkt_pts != 0 ? picture->pkt_pts : picture->pkt_dts;
 
             frame_number++;
-            valid = true;
+
+            //valid = true;
+            if (!this->keyframe || (this->keyframe && is_keyframe))
+                valid = true;
+            else
+                picture_pts = AV_NOPTS_VALUE_;
+
+            if (first_frame_number < 0)
+                first_frame_number = dts_to_frame_number(picture_pts);
         }
         else
         {
@@ -1070,9 +1095,6 @@ bool CvCapture_FFMPEG::grabFrame()
                 break;
         }
     }
-
-    if( valid && first_frame_number < 0 )
-        first_frame_number = dts_to_frame_number(picture_pts);
 
 #if USE_AV_INTERRUPT_CALLBACK
     // deactivate interrupt callback
@@ -1669,7 +1691,10 @@ static AVStream *icv_add_video_stream_FFMPEG(AVFormatContext *oc,
 #endif
 
 #if LIBAVCODEC_BUILD >= CALC_FFMPEG_VERSION(52, 42, 0)
-    st->avg_frame_rate = (AVRational){frame_rate, frame_rate_base};
+    AVRational rational;
+    rational.num = frame_rate;
+    rational.den = frame_rate_base;
+    st->avg_frame_rate = rational;
 #endif
 #if LIBAVFORMAT_BUILD >= CALC_FFMPEG_VERSION(55, 20, 0)
     st->time_base = c->time_base;
@@ -2356,13 +2381,13 @@ bool CvVideoWriter_FFMPEG::open( const char * filename, int fourcc,
 
 
 
-CvCapture_FFMPEG* cvCreateFileCapture_FFMPEG( const char* filename )
+CvCapture_FFMPEG* cvCreateFileCapture_FFMPEG(const char* filename, int thread_num, bool key_frame)
 {
     CvCapture_FFMPEG* capture = (CvCapture_FFMPEG*)malloc(sizeof(*capture));
     if (!capture)
         return 0;
     capture->init();
-    if( capture->open( filename ))
+    if( capture->open(filename, thread_num, key_frame))
         return capture;
 
     capture->close();
