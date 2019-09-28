@@ -1034,7 +1034,7 @@ bool CvCapture_FFMPEG::grabFrame()
         int ret = av_read_frame(ic, &packet);
         if (ret == AVERROR(EAGAIN))
             continue;
-        else if (packet.size <= 0)
+        else if (this->keyframe && packet.size <= 0)
         {
             break;
         }
